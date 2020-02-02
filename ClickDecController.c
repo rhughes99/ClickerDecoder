@@ -3,6 +3,7 @@
 	Shared memory example
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
@@ -33,14 +34,14 @@ int main(int argc, char *argv[])
 	fd = open ("/dev/mem", O_RDWR | O_SYNC);
 	if (fd == -1)
 	{
-		printf ("*** ERROR: could not open /dev/mem.\n\n");
-		return 1;
+		printf ("*** ERROR: could not open /dev/mem.\n");
+		return EXIT_FAILURE;
 	}
 	pru = mmap (0, PRU_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU_ADDR);
 	if (pru == MAP_FAILED)
 	{
-		printf ("*** ERROR: could not map memory.\n\n");
-		return 1;
+		printf ("*** ERROR: could not map memory.\n");
+		return EXIT_FAILURE;
 	}
 	close(fd);
 //	printf ("Using /dev/mem.\n");
@@ -114,10 +115,7 @@ int main(int argc, char *argv[])
 	printf ("---Shutting down...\n");
 
 	if(munmap(pru, PRU_LEN))
-		printf("*** munmap failed at Shutdown\n");
-
-	else
-		printf("munmap succeeded\n");
+		printf("*** ERROR: munmap failed at Shutdown\n");
 
 	return EXIT_SUCCESS;
 }

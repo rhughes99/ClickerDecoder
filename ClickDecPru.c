@@ -14,7 +14,7 @@ volatile register uint32_t __R31;
 void main(void)
 {
 	uint32_t i, code, sample;
-	uint32_t LED, IR_IN. TEST;
+	uint32_t LED, IR_IN, TEST;
 
 	// Set I/O constants
 	LED   = 0x1<<1;		// P9_29, output
