@@ -15,7 +15,7 @@ P9_28 = a toggled test point
 
 To Run:
 source setup.sh							- to set some parameters and configure I/O pins
-gcc ClickDecController -o Controller	- to compile Controller
+gcc ClickDecController.c -o Controller	- to compile Controller
 make									- to compile PRU code and install and start
 ./Controller							- to start Controller
 
