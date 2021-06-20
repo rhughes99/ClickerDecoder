@@ -41,7 +41,8 @@ int main(int argc, char *argv[])
 	unsigned int *pru;		// Points to start of PRU memory
 	unsigned int theCmd, lastCmd;
 	unsigned int *pruDRAM_32int_ptr;
-	int	i, fd file;
+	int	i, fd, file;
+    char cmdBuffer[1];
 
 	fd = open ("/dev/mem", O_RDWR | O_SYNC);
 	if (fd == -1)
