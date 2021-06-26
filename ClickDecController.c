@@ -1,5 +1,6 @@
 /*	Clicker Decoder Controller
-	Tuned for Magnavox VCR remote: VCR & TV
+	Tuned for Philips / Magnavox TV remote
+    (Smaller controller only for TV)
 	Shared memory example
 */
 #include <stdio.h>
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
 		{
 			switch (theCmd)
 			{
-				case 19712843:							// 0x12CCB4B
+/*				case 19712843:							// 0x12CCB4B
 				case 11324235:							// 0x0ACCB4B
 					printf("--- VCR POWER ---\n");
 					if (displayPresent)
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
 				        write(file, dispBuffer, 16);
 					}
 					break;
-
+*/
 				case 11184971:
 				case 19573579:
 					printf("--- TV POWER ---\n");
@@ -150,7 +151,7 @@ int main(int argc, char *argv[])
 				        write(file, dispBuffer, 16);
 					}
 					break;
-
+/*
 				case 11326803:							// 0x0ACD553
 				case 19715411:							// 0x12CD553
 					printf("VCR/TV\n");
@@ -180,8 +181,21 @@ int main(int argc, char *argv[])
 				case 19715251:
 					printf("VCR: REW\n");
 					break;
+*/
+				case 11186859:                          // 0xAAB2AB
+                case 19575467:                          // 0x12AB2AB
+                    printf("CH +\n");
+                    break;
 
-				// And a whole lot more...
+                case 11184981:                          // 0xAAAB55
+                case 19573589:                          // 0x12AAB55
+                    printf("STATUS/EXIT\n");
+                    if (displayPresent)
+                    {
+                        ClearDisplay();
+                        write(file, dispBuffer, 16);
+                    }
+                    break;
 
 				default:
 					printf("Unknown cmd: %d (0x%X)\n", theCmd, theCmd);
