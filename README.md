@@ -1,7 +1,8 @@
 --- ClickerDecoderSharedMem Notes
 
 Playing around with the BBB and a TSOP38238 IR Receiver Module
-I am using an anciet Magnavox VCR controller, so the codes are probably no longer germane.
+Started with ancient Magnavox TV/VCR controller, and switched to TV (small)
+  controller in June 2021.
 The Controller prints codes it doesn't know, so you can teach it new tricks.
 
 This version with new BBB PRU software and uses shared memory for 2-way
