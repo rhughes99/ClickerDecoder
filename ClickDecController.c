@@ -2,6 +2,13 @@
 	Tuned for Philips / Magnavox TV remote
     (Smaller controller only for TV)
 	Shared memory example
+	
+	Checks for two I2C devices:
+		8x8 matrix display at 0x71
+		MCP23017 I/O expander at 0x20
+	
+	The relay board connected to the MCP23017 uses negative logic.
+	That is, 0 = relay energized
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,17 +31,42 @@ unsigned int *pru0DRAM_32int_ptr;		// Points to the start of PRU 0 usable RAM
 unsigned int *pru1DRAM_32int_ptr;		// Points to the start of PRU 1 usable RAM
 unsigned int *prusharedMem_32int_ptr;	// Points to the start of shared memory
 
-void myShutdown(int sig);
-void ClearDisplay();
-void SetUpX();
-void SetUp8Square();
-void SetUp6Square();
-void SetUp4Square();
-void SetUp2Square();
+// Display globals
+#define MATRIX_ADDR 0x71
 
-unsigned char running;
 unsigned char displayPresent = 1;    // assume display on I2C bus
 unsigned char dispBuffer[16];
+
+// MCP globals
+#define MCP_ADDR0 0x20
+
+// MCP23017 register numbers
+#define IODIRA 0x00
+#define IODIRB 0x01
+#define GPIOA  0x12
+#define GPIOB  0x13
+
+// MCP output and "low" status
+#define OUTPUT  0x00
+#define ALL_OFF 0x00
+
+unsigned char mcpBuffer[2];			// Buffer for writes to MCP
+int mcp0;
+
+void myShutdown(int sig);
+void ClearDisplay(void);
+void SetUpX(void);
+void SetUp8Square(void);
+void SetUp6Square(void);
+void SetUp4Square(void);
+void SetUp2Square(void);
+
+void McpAllOff(void);
+void McpAllOn(void);
+void McpInit(void);
+void McpSendBytes(unsigned char byteA, unsigned char byteB);
+
+unsigned char running;
 
 //____________________
 int main(int argc, char *argv[])
@@ -67,20 +99,22 @@ int main(int argc, char *argv[])
 
 	pruDRAM_32int_ptr = pru0DRAM_32int_ptr;
 
-	for(i=0; i<8; i++)
+	for (i=0; i<8; i++)
 	{
 		if (pruDRAM_32int_ptr[i] != i)
 			printf("*** Unexpected value read from PRU: %d %d\n", i, pruDRAM_32int_ptr[i]);
 	}
 
-	// I2C Setup
+	McpInit();
+
+	// Display setup
     if ((file = open("/dev/i2c-2", O_RDWR)) < 0)
     {
         perror("*** Failed to open I2C bus dev file\n");
         return 1;
     }
 
-    if (ioctl(file, I2C_SLAVE, 0x71) < 0)
+    if (ioctl(file, I2C_SLAVE, MATRIX_ADDR) < 0)
     {
         perror("*** Failed to connect to I2C device\n");
         return 1;
@@ -139,6 +173,10 @@ int main(int argc, char *argv[])
                     {
                         ClearDisplay();
                         write(file, dispBuffer, 16);
+                        
+                        // Deactivate relays
+						McpAllOn();
+
                     }
                     break;
 
@@ -190,6 +228,7 @@ int main(int argc, char *argv[])
                 case 11184813:                          // 0xAAAAAD
 				case 19573421:                          // 0x12AAAAD
                     printf("1\n");
+                    McpSendBytes(0xFE, 0xFF);
                     break;
 
                 case 11184819:                          // 0xAAAAB3
@@ -323,7 +362,7 @@ void myShutdown(int sig)
 }
 
 //____________________
-void ClearDisplay()
+void ClearDisplay(void)
 {
     // Clear dispBuffer; note that every other byte is used
     int i;
@@ -332,7 +371,7 @@ void ClearDisplay()
 }
 
 //____________________
-void SetUpX()
+void SetUpX(void)
 {
     dispBuffer[0x1] = 0xC0;
     dispBuffer[0x3] = 0x21;
@@ -345,7 +384,7 @@ void SetUpX()
 }
 
 //____________________
-void SetUp8Square()
+void SetUp8Square(void)
 {
     dispBuffer[0x1] = 0xFF;
     dispBuffer[0x3] = 0xC0;
@@ -358,7 +397,7 @@ void SetUp8Square()
 }
 
 //____________________
-void SetUp6Square()
+void SetUp6Square(void)
 {
     dispBuffer[0x1] = 0x00;
     dispBuffer[0x3] = 0x3F;
@@ -371,7 +410,7 @@ void SetUp6Square()
 }
 
 //____________________
-void SetUp4Square()
+void SetUp4Square(void)
 {
     dispBuffer[0x1] = 0x00;
     dispBuffer[0x3] = 0x00;
@@ -384,7 +423,7 @@ void SetUp4Square()
 }
 
 //____________________
-void SetUp2Square()
+void SetUp2Square(void)
 {
     dispBuffer[0x1] = 0x00;
     dispBuffer[0x3] = 0x00;
@@ -395,3 +434,96 @@ void SetUp2Square()
     dispBuffer[0xD] = 0x00;
     dispBuffer[0xF] = 0x00;
 }
+
+//____________________
+void McpAllOff(void)
+{
+  // Sets all MCP outputs to 0
+  // This activates all relays
+
+  mcpBuffer[0] = GPIOA;
+  mcpBuffer[1] = ALL_OFF;
+  write(mcp0, mcpBuffer, 2);
+
+  mcpBuffer[0] = GPIOB;
+  mcpBuffer[1] = ALL_OFF;
+  write(mcp0, mcpBuffer, 2);
+}
+
+//____________________
+void McpAllOn(void)
+{
+  // Sets all MCP outputs to 1
+  // This deactivates all relays
+
+  mcpBuffer[0] = GPIOA;
+  mcpBuffer[1] = ALL_ON;
+  write(mcp0, mcpBuffer, 2);
+
+  mcpBuffer[0] = GPIOB;
+  buffmcpBufferer[1] = ALL_ON;
+  write(mcp0, mcpBuffer, 2);
+}
+
+//____________________
+void McpInit(void)
+{
+	// Chip initialization:
+	// The system (and kernel in particular) must set up communication
+	// with the MCP23017 chips over the I2C bus. It's done by opening
+	// the device file (/dev/i2c-1) and calling the "ioctl" function.
+
+	// The chip must also "know" that it's used for providing outputs.
+	// All registers used are specified in chip's datasheet:
+	// http://ww1.microchip.com/downloads/en/DeviceDoc/21952b.pdf
+
+	// Initialize 1st MCP23017 with 0x20 address:
+	mcp0 = open("/dev/i2c-2", O_RDWR);
+	ioctl(mcp0, I2C_SLAVE, MCP0_ADDR);
+
+	/*
+		Writing bytes to registers:
+			Each MCP23017 has two input/output banks, and we can read or write
+			bytes to/from them at once.
+			Bank A (pins 21...28, named GPA0...GPA7)
+			Bank B (pins 1...8, named GPB0...GPB7)
+		The MCP23017 has many registers we can write bytes from, but the ones
+		that interest us are (with their hex values):
+			IODIRA - 0x00  - for setting bank direction: 0 - output, 1 - input
+			IODIRB - 0x01  - as above for bank B
+			GPIOA  - 0x12  - for writing data to outputs or reading inputs of bank A
+			GPIOB  - 0x13  - as above for bank B
+		First, we need to set IODIRA and IODIRB registers which control
+		input or output direction for all GPIO pins of bank A or B.
+		Write 0x00 for all outputs, 0xFF for all inputs,
+		or specify pins to be outputs and inputs.
+	*/
+
+	// First, set I/O direction to output
+	mcpBuffer[0] = IODIRA;
+	mcpBuffer[1] = OUTPUT;
+	write(mcp0, mcpBuffer, 2);	// set IODIRA to all outputs
+
+	mcpBuffer[0] = IODIRB;
+	mcpBuffer[1] = OUTPUT;
+	write(mcp0, mcpBuffer, 2);	// set IODIRB to all outputs
+
+	// Initialize all outputs to 1 to deactivate relays
+	McpAllOn();
+}
+
+//____________________
+void McpSendBytes(unsigned char byteA, unsigned char byteB)
+{
+  // Sends two bytes to GPIOA & GPIOB registers
+
+  mcpBuffer[0] = GPIOA;
+  mcpBuffer[1] = byteA;
+  write(mcp0, mcpBuffer, 2);	// GPIOA
+
+  mcpBuffer[0] = GPIOB;
+  bufmcpBufferfer[1] = byteB;
+  write(mcp0, mcpBuffer, 2);	// GPIOB
+}
+
+
