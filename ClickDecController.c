@@ -2,11 +2,11 @@
 	Tuned for Philips / Magnavox TV remote
     (Smaller controller only for TV)
 	Shared memory example
-	
+
 	Checks for two I2C devices:
 		8x8 matrix display at 0x71
 		MCP23017 I/O expander at 0x20
-	
+
 	The relay board connected to the MCP23017 uses negative logic.
 	That is, 0 = relay energized
 */
@@ -49,6 +49,7 @@ unsigned char dispBuffer[16];
 // MCP output and "low" status
 #define OUTPUT  0x00
 #define ALL_OFF 0x00
+#define ALL_ON  0xFF
 
 unsigned char mcpBuffer[2];			// Buffer for writes to MCP
 int mcp0;
@@ -63,7 +64,7 @@ void SetUp2Square(void);
 
 void McpAllOff(void);
 void McpAllOn(void);
-void McpInit(void);
+int  McpInit(void);
 void McpSendBytes(unsigned char byteA, unsigned char byteB);
 
 unsigned char running;
@@ -105,7 +106,8 @@ int main(int argc, char *argv[])
 			printf("*** Unexpected value read from PRU: %d %d\n", i, pruDRAM_32int_ptr[i]);
 	}
 
-	McpInit();
+	if (McpInit() != 0)
+        printf("\n*** Problem in McpInit()\n");;
 
 	// Display setup
     if ((file = open("/dev/i2c-2", O_RDWR)) < 0)
@@ -173,7 +175,7 @@ int main(int argc, char *argv[])
                     {
                         ClearDisplay();
                         write(file, dispBuffer, 16);
-                        
+
                         // Deactivate relays
 						McpAllOn();
 
@@ -438,35 +440,37 @@ void SetUp2Square(void)
 //____________________
 void McpAllOff(void)
 {
-  // Sets all MCP outputs to 0
-  // This activates all relays
+    // Sets all MCP outputs to 0
+    // This activates all relays
 
-  mcpBuffer[0] = GPIOA;
-  mcpBuffer[1] = ALL_OFF;
-  write(mcp0, mcpBuffer, 2);
+    mcpBuffer[0] = GPIOA;
+    mcpBuffer[1] = ALL_OFF;
+    write(mcp0, mcpBuffer, 2);
 
-  mcpBuffer[0] = GPIOB;
-  mcpBuffer[1] = ALL_OFF;
-  write(mcp0, mcpBuffer, 2);
+    mcpBuffer[0] = GPIOB;
+    mcpBuffer[1] = ALL_OFF;
+    write(mcp0, mcpBuffer, 2);
 }
 
 //____________________
 void McpAllOn(void)
 {
-  // Sets all MCP outputs to 1
-  // This deactivates all relays
+    // Sets all MCP outputs to 1
+    // This deactivates all relays
 
-  mcpBuffer[0] = GPIOA;
-  mcpBuffer[1] = ALL_ON;
-  write(mcp0, mcpBuffer, 2);
+    mcpBuffer[0] = GPIOA;
+    mcpBuffer[1] = ALL_ON;
+    write(mcp0, mcpBuffer, 2);
 
-  mcpBuffer[0] = GPIOB;
-  buffmcpBufferer[1] = ALL_ON;
-  write(mcp0, mcpBuffer, 2);
+    mcpBuffer[0] = GPIOB;
+    mcpBuffer[1] = ALL_ON;
+    write(mcp0, mcpBuffer, 2);
+
+//    printf("McpAllOn\n");
 }
 
 //____________________
-void McpInit(void)
+int McpInit(void)
 {
 	// Chip initialization:
 	// The system (and kernel in particular) must set up communication
@@ -479,7 +483,16 @@ void McpInit(void)
 
 	// Initialize 1st MCP23017 with 0x20 address:
 	mcp0 = open("/dev/i2c-2", O_RDWR);
-	ioctl(mcp0, I2C_SLAVE, MCP0_ADDR);
+    if (mcp0 < 0)
+    {
+        perror("*** Failed to open I2C bus file for MCP device\n");
+        return -1;
+    }
+	if (ioctl(mcp0, I2C_SLAVE, MCP_ADDR0) < 0)
+    {
+        perror("*** Failed to connect to MCP\n");
+        return -1;
+    }
 
 	/*
 		Writing bytes to registers:
@@ -510,6 +523,7 @@ void McpInit(void)
 
 	// Initialize all outputs to 1 to deactivate relays
 	McpAllOn();
+    return 0;
 }
 
 //____________________
@@ -522,8 +536,7 @@ void McpSendBytes(unsigned char byteA, unsigned char byteB)
   write(mcp0, mcpBuffer, 2);	// GPIOA
 
   mcpBuffer[0] = GPIOB;
-  bufmcpBufferfer[1] = byteB;
+  mcpBuffer[1] = byteB;
   write(mcp0, mcpBuffer, 2);	// GPIOB
 }
-
 
