@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
                         write(file, dispBuffer, 16);
 
                         // Deactivate relays
-						McpAllOn();
+						McpAllOff();
 
                     }
                     break;
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
                 case 11184813:                          // 0xAAAAAD
 				case 19573421:                          // 0x12AAAAD
                     printf("1\n");
-                    McpSendBytes(0xFE, 0xFF);
+                    McpSendBytes(0x01, 0x00);
                     break;
 
                 case 11184819:                          // 0xAAAAB3
@@ -521,8 +521,8 @@ int McpInit(void)
 	mcpBuffer[1] = OUTPUT;
 	write(mcp0, mcpBuffer, 2);	// set IODIRB to all outputs
 
-	// Initialize all outputs to 1 to deactivate relays
-	McpAllOn();
+	// Initialize all outputs to 0 to deactivate relays
+	McpAllOff();
     return 0;
 }
 
