@@ -231,6 +231,8 @@ int main(int argc, char *argv[])
 				case 19573421:                          // 0x12AAAAD
                     printf("1\n");
                     McpSendBytes(0x01, 0x00);
+                    sleep(1.0);
+                    McpSendBytes(0x00, 0x00);
                     break;
 
                 case 11184819:                          // 0xAAAAB3
