@@ -199,22 +199,26 @@ int main(int argc, char *argv[])
 
 				case 11185325:                          // 0xAAACAD
                 case 19573933:                          // 0x12AACAD
-                    printf("VOL -\n");
+                    printf("VOL -\ (Relay 13)n");
+                    McpSendBytes(0x00, 0x10);
                     break;
 
 				case 11187027:                          // 0xAAB353
                 case 19575635:                          // 0x12AB353
-                    printf("MENU\n");
+                    printf("MENU (Relay 14)\n");
+                    McpSendBytes(0x00, 0x20);
                     break;
 
 				case 11185323:                          // 0xAAACAB
                 case 19573931:                          // 0x12AACAB
-                    printf("VOL +\n");
+                    printf("VOL + (Relay 15)\n");
+                    McpSendBytes(0x00, 0x40);
                     break;
 
                 case 11184973:                          // 0xAAAB4D
 				case 19573581:                          // 0x12AAB4D
-                    printf("MUTE\n");
+                    printf("MUTE (Relay 16)\n");
+                    McpSendBytes(0x00, 0x80);
                     break;
 
                 case 11186861:                          // 0xAAB2AD
@@ -229,90 +233,99 @@ int main(int argc, char *argv[])
 
                 case 11184813:                          // 0xAAAAAD
 				case 19573421:                          // 0x12AAAAD
-                    printf("1\n");
+                    printf("1 (Relay 1)\n");
                     McpSendBytes(0x01, 0x00);
-                    sleep(1.0);
-                    McpSendBytes(0x00, 0x00);
                     break;
 
                 case 11184819:                          // 0xAAAAB3
 				case 19573427:                          // 0x12AAAB3
-                    printf("2\n");
+                    printf("2 (Relay 2)\n");
 					if (displayPresent)
 					{
 						SetUp2Square();
 				        write(file, dispBuffer, 16);
 					}
+                   McpSendBytes(0x02, 0x00);
                     break;
 
                 case 11184821:                          // 0xAAAAB5
 				case 19573429:                          // 0x12AAAB5
-                    printf("3\n");
+                    printf("3 (Relay 3)\n");
+                    McpSendBytes(0x04, 0x00);
                     break;
 
                 case 11184843:                          // 0xAAAACB
 				case 19573451:                          // 0x12AAACB
-                    printf("4\n");
+                    printf("4 (Relay 4)\n");
 					if (displayPresent)
 					{
 						SetUp4Square();
 				        write(file, dispBuffer, 16);
 					}
+					McpSendBytes(0x08, 0x00);
                     break;
 
                 case 11184845:                          // 0xAAAACD
 				case 19573453:                          // 0x12AAACD
-                    printf("5\n");
+                    printf("5 (Relay 5)\n");
+                    McpSendBytes(0x10, 0x00);
                     break;
 
                 case 11184851:                          // 0xAAAAD3
 				case 19573459:                          // 0x12AAAD3
-                    printf("6\n");
+                    printf("6 (Relay 6)\n");
 					if (displayPresent)
 					{
 						SetUp6Square();
 				        write(file, dispBuffer, 16);
 					}
+					McpSendBytes(0x20, 0x00);
                     break;
 
                 case 11184853:                          // 0xAAAAD5
 				case 19573461:                          // 0x12AAAD5
-                    printf("7\n");
+                    printf("7 (Relay 7)\n");
+                    McpSendBytes(0x40, 0x00);
                     break;
 
                 case 11184939:                          // 0xAAAB2B
 				case 19573547:                          // 0x12AAB2B
-                    printf("8\n");
+                    printf("8 (Relay 8)\n");
 					if (displayPresent)
 					{
 						SetUp8Square();
 				        write(file, dispBuffer, 16);
 					}
+					McpSendBytes(0x80, 0x00);
                     break;
 
                 case 11184941:                          // 0xAAAB2D
 				case 19573549:                          // 0x12AAB2D
-                    printf("9\n");
+                    printf("9 (Relay 9)\n");
+                    McpSendBytes(0x00, 0x01);
                     break;
 
                 case 11184811:                          // 0xAAAAAB
 				case 19573419:                          // 0x12AAAAB
-                    printf("0\n");
+                    printf("0 (Relay 10)\n");
                     if (displayPresent)
                     {
                         ClearDisplay();
                         write(file, dispBuffer, 16);
                     }
+                    McpSendBytes(0x00, 0x02);
                     break;
 
                 case 11185491:                          // 0xAAAD53
 				case 19574099:                          // 0x12AAD53
-                    printf("CC\n");
+                    printf("CC (Relay 11)\n");
+                    McpSendBytes(0x00, 0x04);
                     break;
 
                 case 11186899:                          // 0xAAB2D3
 				case 19575507:                          // 0x12AB2D3
-                    printf("SLEEP\n");
+                    printf("SLEEP (Relay 12)\n");
+                    McpSendBytes(0x00, 0x08);
                     break;
 
 /* These are VCR commands used by TV/VCR remote
