@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 
 				case 11185325:                          // 0xAAACAD
                 case 19573933:                          // 0x12AACAD
-                    printf("VOL -\ (Relay 13)n");
+                    printf("VOL - (Relay 13)\n");
                     McpSendBytes(0x00, 0x10);
                     break;
 
